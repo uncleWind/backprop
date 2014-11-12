@@ -1,0 +1,381 @@
+As each XML file, network file should contain header, as shown below:
+<?xml version="1.0"?>
+Without this header, XML parser will not know that it is working with XML file.
+
+After header, put the following XML tag:
+<network>
+	stuff...
+</network>
+Everything in between 'network' tag will count as part of network resolving tag. User is free to use any of those tags as long as she can provide enough data in files that can be used to create and train network.
+As of last stable version, these tags include:
+-> 'params' (parameters of created network)
+-> 'layer' (network layers and its parameters)
+-> 'outputlayerparams' (parameters for output layer neurons)
+-> 'learningset' (learning set tuples[1])
+
+To ensure that network will create properly, user have to provide parameters for 'params', 'layer' and 'learningset' tags. Network will not be created without contents of 'params' and 'layer' tags. 
+'outputlayerparams' is optional. If 'outputlayerparams' have to be placed in XML file, it have to be placed after 'network' and 'layer' tags.
+'learningset' tag is optional in sense that it isn't critical for network creation; it have to be provided if learning set is known.
+
+Suggested order of XML file looks as follows:
+<network>
+	<params>
+		stuff...
+	</params>
+	<layers>
+		stuff...
+	</layers>
+	<outputlayerparams>
+		stuff...
+	</outputlayerparams>
+	<learningset>
+		stuff...
+	</learningset>
+</network>
+
+Any tag with asterisk before it is necessary to use with associated parent tag. Parent tags with asterisk are necessary to create network. If a list of tags is provided, user have to put them in the exact order.
+
+Inside [parent]*'params' tag user can provide values for tags listed below:
+-> *'training': used to set trainer for the network; as of last stable version, user can set one of these values: Batch, Online
+-> *'rate': learning rate for network; value of real number (double)
+-> *'momentum': momentum for network; value of real number (double)
+-> *'errormethod': used to set error calculation method: as of last stable version, user can set one of these values: MeanSquare, RootMeanSquare, SumOfSquares
+-> *'targeterror': target error value to achieve by learning algorithm; value of real number(double)
+-> *'bias': strongly advised, value of True sets network to work with bias neurons on input and hidden layers
+
+Example of 'params' content:
+<params>
+	<training>Batch</training>
+	<rate>0.9</rate>
+	<momentum>0.7</momentum>
+	<errormethod>MeanSquare</errormethod>
+	<targeterror>0.025</targeterror>
+	<bias>True</bias>
+</params>
+
+Inside [parent]*'layers' tag user should provide information about each layer. This can be done by *'layer' tag contents:
+-> *'neurons': sets number of neurons in layer (IMPORTANT: without bias neurons); value of integer number (int)
+-> *'randomizer': sets weight randomization method for layer[2]; as of last stable version, user can set one of these values: RangedRandom, NguyenWidrow
+-> *'randminbound': lower bound for RangedRandom weight randomization method; value of real number (double)
+-> *'randmaxbound': higher bound for RangedRandom wieght randomization method; value of real number (double)
+-> *'activation': sets activation method for layer[2]; as of last stable version, user can set one of these values: HyperbolicTangent, Sigmoid
+Layers have to be provided in this order: input layer, output layer, hidden layers. User have to provide at least three layers so the backpropagation can be applied.
+For example, if user want to create four layer network, she have to put layers in I -> O -> H1 -> H2 order. It will create I -> H1 -> H2 -> O network.
+
+Inside *'layers' tag user can additionally provide 'weightmatrix' tag along with it's contents. User can add information about weight matrices if particular state of a network is known for a set of learning data. If such information are to be provided, data must be present for each input and hidden layer[3]. User can place 'weightmatrix' tag and its contents anywhere in *'layers' contents, as long as they are provided in correct order[3]. Suggested way for placing 'weightmatrix' tags is to put them below corresponding *'layer' tag or below all *'layer' tags.
+If 'weightmatrix' is to be used, user have to provide content listed below:
+-> *'rows': sets number of rows in weight matrix, including bias neurons; value of integer number (int)
+-> *'columns': sets number of columns in weight matrix, excluding bias neurons; value of integer number (int)
+-> *'values': surronding tag, containing set of *'row' tags; content of each *'row' tag includes all weight values (double) from corresponding (in relation to *'row' tag position) input neuron to all output neurons, seperated by semicolons.
+
+Example of 'layers' content:
+<layers>
+	<layer>
+        <neurons>3</neurons>
+        <randomizer>NguyenWidrow</randomizer>
+        <randminbound>None</randminbound>
+        <randmaxbound>None</randmaxbound>
+		<activation>Sigmoid</activation>
+    </layer>
+    <weightmatrix>
+		<rows>4</rows>
+		<columns>3</columns>
+		<values>
+			<row>-2.7523214786883474;0.828703756142696;4.420506974602124</row>
+			<row>-1.1592793067257048;2.3023591845539206;2.4457634464714295</row>
+			<row>-3.3205727546627775;4.4426497900224025;1.5339519284465195</row>
+			<row>2.3832798162513145;-1.9259139519725605;-2.5406372617637394</row>
+		</values>
+	</weightmatrix>
+    <layer>
+        <neurons>2</neurons>
+        <randomizer>NguyenWidrow</randomizer>
+        <randminbound>None</randminbound>
+        <randmaxbound>None</randmaxbound>
+        <activation>Sigmoid</activation>
+    </layer>
+    <layer>
+        <neurons>3</neurons>
+        <randomizer>NguyenWidrow</randomizer>
+        <randminbound>None</randminbound>
+        <randmaxbound>None</randmaxbound>
+        <activation>Sigmoid</activation>
+    </layer>
+    <weightmatrix>
+		<rows>4</rows>
+		<columns>2</columns>
+		<values>
+			<row>-3.5319581654485193;-4.400507888896375</row>
+			<row>-1.3087849945057521;5.030571927366819</row>
+			<row>5.597264171909454;0.30840066077441813</row>
+			<row>-1.2143768089848768;-1.724981813444149</row>
+		</values>
+	</weightmatrix>
+</layers>
+
+[parent]'outputlayerparams' is an optional tag. If it is to be used, user have to provide information about each edited neuron, enclosed in *'neuron' tag:
+-> *'position': position of neuron in output layer; value of integer number (int)
+-> *'multiplier': value by which output value of neuron will be multiplied upon access request is raised; value of real number (double)
+Remainder that user don't have to provide information for each neuron in the output layer, as multiplier is optional (default value of 1.0f) and used only for result decoration purposes.
+
+Example of 'outputlayerparams' content:
+<outputlayerparams>
+	<neuron>
+		<position>1</position>
+		<multiplier>2</multiplier>
+	</neuron>
+	<neuron>
+		<position>2</position>
+		<multiplier>0.5</multiplier>
+	</neuron>
+</outputlayerparams>
+
+Entries inside [parent]'learningset' tag are created with simple rule: each tuple[1] is enclosed with *'tuple' tag. Inside tuple tag, all input and output values are enclosed with *'inputs' and *'outputs' tags. All input values are signed by *'input' tag, as outputs are signed with *'output' tag. The exception occures for first entry, where values have to be signed with *'firstinput' or *'firstoutput' tag (way how XML handler works).
+
+Example of 'learningset' content:
+<learningset>
+	<tuple>
+		<inputs>
+			<firstinput>0.02</firstinput>
+			<input>0.02</input>
+			<input>0.02</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.1</firstoutput>
+			<output>0.1</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.02</firstinput>
+			<input>0.02</input>
+			<input>0.98</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.1</firstoutput>
+			<output>0.9</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.02</firstinput>
+			<input>0.98</input>
+			<input>0.02</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.1</firstoutput>
+			<output>0.1</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.02</firstinput>
+			<input>0.98</input>
+			<input>0.98</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.9</firstoutput>
+			<output>0.9</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.98</firstinput>
+			<input>0.02</input>
+			<input>0.02</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.9</firstoutput>
+			<output>0.1</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.98</firstinput>
+			<input>0.02</input>
+			<input>0.98</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.9</firstoutput>
+			<output>0.9</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.98</firstinput>
+			<input>0.98</input>
+			<input>0.02</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.9</firstoutput>
+			<output>0.9</output>
+		</outputs>
+	</tuple>
+	<tuple>
+		<inputs>
+			<firstinput>0.98</firstinput>
+			<input>0.98</input>
+			<input>0.98</input>
+		</inputs>
+		<outputs>
+			<firstoutput>0.9</firstoutput>
+			<output>0.9</output>
+		</outputs>
+	</tuple>
+</learningset>
+
+Following everything listed above, you can create sample (trained) network using this code:
+
+<?xml version="1.0"?>
+<network>
+	<params>
+		<training>Batch</training>
+		<rate>0.9</rate>
+		<momentum>0.7</momentum>
+		<errormethod>MeanSquare</errormethod>
+		<targeterror>0.025</targeterror>
+		<bias>True</bias>
+	</params>
+	<layers>
+		<layer>
+            <neurons>3</neurons>
+            <randomizer>NguyenWidrow</randomizer>
+            <randminbound>None</randminbound>
+            <randmaxbound>None</randmaxbound>
+            <activation>Sigmoid</activation>
+        </layer>
+        <weightmatrix>
+			<rows>4</rows>
+			<columns>3</columns>
+			<values>
+				<row>-2.7523214786883474;0.828703756142696;4.420506974602124</row>
+				<row>-1.1592793067257048;2.3023591845539206;2.4457634464714295</row>
+				<row>-3.3205727546627775;4.4426497900224025;1.5339519284465195</row>
+				<row>2.3832798162513145;-1.9259139519725605;-2.5406372617637394</row>
+			</values>
+      	</weightmatrix>
+        <layer>
+            <neurons>2</neurons>
+            <randomizer>NguyenWidrow</randomizer>
+            <randminbound>None</randminbound>
+            <randmaxbound>None</randmaxbound>
+            <activation>Sigmoid</activation>
+        </layer>
+        <layer>
+            <neurons>3</neurons>
+            <randomizer>NguyenWidrow</randomizer>
+            <randminbound>None</randminbound>
+            <randmaxbound>None</randmaxbound>
+            <activation>Sigmoid</activation>
+        </layer>
+        <weightmatrix>
+			<rows>4</rows>
+			<columns>2</columns>
+			<values>
+				<row>-3.5319581654485193;-4.400507888896375</row>
+				<row>-1.3087849945057521;5.030571927366819</row>
+				<row>5.597264171909454;0.30840066077441813</row>
+				<row>-1.2143768089848768;-1.724981813444149</row>
+			</values>
+		</weightmatrix>
+	</layers>
+	<learningset>
+		<tuple>
+			<inputs>
+				<firstinput>0.02</firstinput>
+				<input>0.02</input>
+				<input>0.02</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.1</firstoutput>
+				<output>0.1</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.02</firstinput>
+				<input>0.02</input>
+				<input>0.98</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.1</firstoutput>
+				<output>0.9</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.02</firstinput>
+				<input>0.98</input>
+				<input>0.02</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.1</firstoutput>
+				<output>0.1</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.02</firstinput>
+				<input>0.98</input>
+				<input>0.98</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.9</firstoutput>
+				<output>0.9</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.98</firstinput>
+				<input>0.02</input>
+				<input>0.02</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.9</firstoutput>
+				<output>0.1</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.98</firstinput>
+				<input>0.02</input>
+				<input>0.98</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.9</firstoutput>
+				<output>0.9</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.98</firstinput>
+				<input>0.98</input>
+				<input>0.02</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.9</firstoutput>
+				<output>0.9</output>
+			</outputs>
+		</tuple>
+		<tuple>
+			<inputs>
+				<firstinput>0.98</firstinput>
+				<input>0.98</input>
+				<input>0.98</input>
+			</inputs>
+			<outputs>
+				<firstoutput>0.9</firstoutput>
+				<output>0.9</output>
+			</outputs>
+		</tuple>
+	</learningset>
+</network>
+
+Advised method of creating files to work with is to provide one file with all data needed to create network including known learning set and other learning sets in separate files, if there will be a necessity to train network with another set of data. This way you can keep history of how network was trained in its lifespan. Also, remember that after each training session network is exported to separate file - be sure to check it out!
+
+Have fun!
+- uncleWind
+
+[1]Tuple as set of valid input and output values from learning set.
+[2]Yes, you can set different weight randomization methods and activation methods for each layer. For science.
+[3]The way how layers work is in between two layers, weight matrix is related with the layer "above"; it's correlated entity. As of it, output layer does not have a weight layer assigned to itself.
